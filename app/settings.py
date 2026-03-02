@@ -27,13 +27,12 @@ SECRET_KEY = 'django-insecure-8v4+mlk3a2ha1y@)3w%#hkzaz+fb_$lf260@=ofs6@6!06cyvl
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["attend.pythonanywhere.com", "localhost", "127.0.0.1"]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    # ... default Django apps ...
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
