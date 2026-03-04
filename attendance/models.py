@@ -31,16 +31,11 @@ class Student(models.Model):
     programme    = models.ForeignKey(Program, on_delete=models.PROTECT, related_name="students")
     level        = models.ForeignKey(Level,   on_delete=models.PROTECT, related_name="students")
     gender       = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
-
-    # QR payload – the lookup key during scanning
-    qr_code      = models.CharField(max_length=255, unique=True, db_index=True)
-
     is_active    = models.BooleanField(default=True)
     created_at   = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["index_number"]
-        indexes  = [models.Index(fields=["qr_code"])]
 
     def __str__(self):
         return f"{self.index_number} – {self.full_name}"
