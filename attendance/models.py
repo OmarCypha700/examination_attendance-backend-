@@ -123,8 +123,8 @@ class ExamAttendance(models.Model):
         ordering        = ["scan_time"]
         indexes         = [
             models.Index(fields=["exam_session", "section"]),
-            models.Index(fields=["scan_time"]),
-            models.Index(fields=["status"]),
+            # models.Index(fields=["scan_time"]),
+            models.Index(fields=["student"]),
         ]
 
     def __str__(self):

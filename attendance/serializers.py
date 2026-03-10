@@ -109,62 +109,178 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
 # ── Scan ─────────────────────────────────────────────────────────────────────
 
+# class ScanSerializer(serializers.Serializer):
+#     """
+#     The frontend generates a QR code containing only the student's index_number.
+#     The scanned value is sent here as `index_number` for lookup and attendance recording.
+#     """
+#     index_number = serializers.CharField(max_length=50)
+#     exam_session = serializers.PrimaryKeyRelatedField(queryset=ExamSession.objects.all())
+#     section      = serializers.ChoiceField(choices=ExamAttendance.SECTION_CHOICES)
+
+#     def validate_exam_session(self, session):
+#         if session.status != "active":
+#             raise serializers.ValidationError("Exam session is not currently active.")
+#         return session
+
+#     def validate_index_number(self, value):
+#         try:
+#             student = Student.objects.select_related("programme", "level").get(
+#                 index_number=value.strip()
+#             )
+#         except Student.DoesNotExist:
+#             raise serializers.ValidationError("No student found with this index number.")
+#         if not student.is_active:
+#             raise serializers.ValidationError("This student's record is inactive.")
+#         self._student = student
+#         return value
+
+#     def save(self, **kwargs):
+#         student    = self._student
+#         session    = self.validated_data["exam_session"]
+#         section    = self.validated_data["section"]
+#         scanned_by = self.context["request"].user
+
+#         existing = ExamAttendance.objects.filter(
+#             student=student, exam_session=session, section=section
+#         ).first()
+
+#         if existing:
+#             return {
+#                 "status":          "duplicate",
+#                 "message":         f"Student already scanned for Section {section}.",
+#                 "student":         StudentLookupSerializer(student).data,
+#                 "attendance":      AttendanceSerializer(existing).data,
+#                 "first_scan_time": existing.scan_time,
+#             }
+
+#         attendance = ExamAttendance.objects.create(
+#             student=student,
+#             exam_session=session,
+#             section=section,
+#             scanned_by=scanned_by,
+#             status="present",
+#         )
+
+#         return {
+#             "status":     "success",
+#             "message":    "Attendance recorded.",
+#             "student":    StudentLookupSerializer(student).data,
+#             "attendance": AttendanceSerializer(attendance).data,
+#         }
+
+
+
 class ScanSerializer(serializers.Serializer):
     """
     The frontend generates a QR code containing only the student's index_number.
     The scanned value is sent here as `index_number` for lookup and attendance recording.
     """
+
     index_number = serializers.CharField(max_length=50)
-    exam_session = serializers.PrimaryKeyRelatedField(queryset=ExamSession.objects.all())
-    section      = serializers.ChoiceField(choices=ExamAttendance.SECTION_CHOICES)
+
+    exam_session = serializers.PrimaryKeyRelatedField(
+        queryset=ExamSession.objects.filter(status="active")
+    )
+
+    section = serializers.ChoiceField(
+        choices=ExamAttendance.SECTION_CHOICES
+    )
+
 
     def validate_exam_session(self, session):
         if session.status != "active":
-            raise serializers.ValidationError("Exam session is not currently active.")
+            raise serializers.ValidationError(
+                "Exam session is not currently active."
+            )
         return session
 
+
     def validate_index_number(self, value):
+
         try:
-            student = Student.objects.select_related("programme", "level").get(
-                index_number=value.strip()
-            )
+            student = Student.objects.select_related(
+                "programme", "level"
+            ).get(index_number=value.strip())
+
         except Student.DoesNotExist:
-            raise serializers.ValidationError("No student found with this index number.")
+            raise serializers.ValidationError(
+                "No student found with this index number."
+            )
+
         if not student.is_active:
-            raise serializers.ValidationError("This student's record is inactive.")
+            raise serializers.ValidationError(
+                "This student's record is inactive."
+            )
+
         self._student = student
         return value
 
+
+    def validate(self, attrs):
+
+        index_number = attrs["index_number"].strip()
+        session = attrs["exam_session"]
+
+        try:
+            student = Student.objects.only(
+                "id", "programme_id", "level_id", "is_active"
+            ).get(index_number=index_number)
+
+        except Student.DoesNotExist:
+            raise serializers.ValidationError(
+                {"index_number": "No student found."}
+            )
+
+        if not student.is_active:
+            raise serializers.ValidationError(
+                {"index_number": "Student is inactive."}
+            )
+
+        if student.programme_id != session.programme_id:
+            raise serializers.ValidationError(
+                {"index_number": "Student not in this programme."}
+            )
+
+        if student.level_id != session.level_id:
+            raise serializers.ValidationError(
+                {"index_number": "Student not in this level."}
+            )
+
+        attrs["student"] = student
+        return attrs
+
+
     def save(self, **kwargs):
-        student    = self._student
-        session    = self.validated_data["exam_session"]
-        section    = self.validated_data["section"]
+
+        # student = self._student
+        student = self.validated_data["student"]
+        session = self.validated_data["exam_session"]
+        section = self.validated_data["section"]
         scanned_by = self.context["request"].user
 
-        existing = ExamAttendance.objects.filter(
-            student=student, exam_session=session, section=section
-        ).first()
-
-        if existing:
-            return {
-                "status":          "duplicate",
-                "message":         f"Student already scanned for Section {section}.",
-                "student":         StudentLookupSerializer(student).data,
-                "attendance":      AttendanceSerializer(existing).data,
-                "first_scan_time": existing.scan_time,
-            }
-
-        attendance = ExamAttendance.objects.create(
+        attendance, created = ExamAttendance.objects.get_or_create(
             student=student,
             exam_session=session,
             section=section,
-            scanned_by=scanned_by,
-            status="present",
+            defaults={
+                "scanned_by": scanned_by,
+                "status": "present"
+            }
         )
 
+        if not created:
+            return {
+                "status": "duplicate",
+                "message": f"Student already scanned for Section {section}.",
+                "student": StudentLookupSerializer(student).data,
+                "attendance": AttendanceSerializer(attendance).data,
+                "first_scan_time": attendance.scan_time,
+            }
+
         return {
-            "status":     "success",
-            "message":    "Attendance recorded.",
-            "student":    StudentLookupSerializer(student).data,
+            "status": "success",
+            "message": "Attendance recorded.",
+            "student": StudentLookupSerializer(student).data,
             "attendance": AttendanceSerializer(attendance).data,
         }
