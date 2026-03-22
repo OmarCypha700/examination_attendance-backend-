@@ -1,13 +1,8 @@
 from django.contrib import admin
 from django.db.models import Count
-from .models import (
-    Program,
-    Level,
-    Student,
-    Course,
-    ExamSession,
-    ExamAttendance,
-)
+
+from .models import (Course, ExamAttendance, ExamSession, Level, Program,
+                     Student)
 
 
 # =========================
@@ -40,11 +35,10 @@ class StudentAdmin(admin.ModelAdmin):
         "full_name",
         "programme",
         "level",
-        "gender",
         "is_active",
         "created_at",
     )
-    list_filter = ("programme", "level", "gender", "is_active")
+    list_filter = ("programme", "level", "is_active")
     search_fields = ("index_number", "full_name", "qr_code")
     readonly_fields = ("created_at",)
     ordering = ("index_number",)

@@ -1,23 +1,20 @@
 from rest_framework import serializers
-from .models import Program, Level, Student, Course, ExamSession, ExamAttendance
 
+from .models import (Course, ExamAttendance, ExamSession, Level, Program,
+                     Student)
 
 # ── Reference ────────────────────────────────────────────────────────────────
-
 class ProgramSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Program
         fields = "__all__"
-
 
 class LevelSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Level
         fields = "__all__"
 
-
 # ── Student ──────────────────────────────────────────────────────────────────
-
 class StudentSerializer(serializers.ModelSerializer):
     programme_name = serializers.CharField(source="programme.name", read_only=True)
     level_name     = serializers.CharField(source="level.name",      read_only=True)
@@ -28,10 +25,9 @@ class StudentSerializer(serializers.ModelSerializer):
             "id", "index_number", "full_name",
             "programme", "programme_name",
             "level", "level_name",
-            "gender", "is_active", "created_at",
+            "is_active", "created_at",
         )
         read_only_fields = ("id", "created_at")
-
 
 class StudentLookupSerializer(serializers.ModelSerializer):
     """Lightweight – returned during QR scan."""
@@ -40,11 +36,9 @@ class StudentLookupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Student
-        fields = ("id", "index_number", "full_name", "programme_name", "level_name", "gender", "is_active")
-
+        fields = ("id", "index_number", "full_name", "programme_name", "level_name", "is_active")
 
 # ── Course ───────────────────────────────────────────────────────────────────
-
 class CourseSerializer(serializers.ModelSerializer):
     programme_name = serializers.CharField(source="programme.name", read_only=True)
     level_name     = serializers.CharField(source="level.name",      read_only=True)
@@ -53,13 +47,11 @@ class CourseSerializer(serializers.ModelSerializer):
         model  = Course
         fields = ("id", "course_code", "course_title", "programme", "programme_name", "level", "level_name")
 
-
 # ── Exam Session ─────────────────────────────────────────────────────────────
-
 class ExamSessionSerializer(serializers.ModelSerializer):
     course_code          = serializers.CharField(source="course.course_code",  read_only=True)
     course_title         = serializers.CharField(source="course.course_title", read_only=True)
-    programme_name       = serializers.CharField(source="programme.name",       read_only=True)
+    programme_name       = serializers.CharField(source="programme.code",       read_only=True)
     level_name           = serializers.CharField(source="level.name",           read_only=True)
     created_by_username  = serializers.CharField(source="created_by.username",  read_only=True)
     attendance_summary   = serializers.SerializerMethodField()
@@ -83,14 +75,11 @@ class ExamSessionSerializer(serializers.ModelSerializer):
         validated_data["created_by"] = self.context["request"].user
         return super().create(validated_data)
 
-
 # ── Attendance ───────────────────────────────────────────────────────────────
-
 class AttendanceSerializer(serializers.ModelSerializer):
     student_name         = serializers.CharField(source="student.full_name",    read_only=True)
     index_number         = serializers.CharField(source="student.index_number", read_only=True)
     student_programme_name = serializers.CharField(source="student.programme.name", read_only=True)
-    student_gender       = serializers.CharField(source="student.gender",        read_only=True)
     scanned_by_username  = serializers.CharField(source="scanned_by.username",  read_only=True)
     section_display      = serializers.CharField(source="get_section_display",  read_only=True)
     status_display       = serializers.CharField(source="get_status_display",   read_only=True)
@@ -99,78 +88,13 @@ class AttendanceSerializer(serializers.ModelSerializer):
         model  = ExamAttendance
         fields = (
             "id", "student", "student_name", "index_number",
-            "student_programme_name", "student_gender",
-            "exam_session", "section", "section_display",
-            "scanned_by", "scanned_by_username",
+            "student_programme_name", "exam_session", "section", 
+            "section_display", "scanned_by", "scanned_by_username",
             "scan_time", "status", "status_display", "remarks",
         )
         read_only_fields = ("id", "scanned_by", "scan_time", "status", "remarks")
 
-
 # ── Scan ─────────────────────────────────────────────────────────────────────
-
-# class ScanSerializer(serializers.Serializer):
-#     """
-#     The frontend generates a QR code containing only the student's index_number.
-#     The scanned value is sent here as `index_number` for lookup and attendance recording.
-#     """
-#     index_number = serializers.CharField(max_length=50)
-#     exam_session = serializers.PrimaryKeyRelatedField(queryset=ExamSession.objects.all())
-#     section      = serializers.ChoiceField(choices=ExamAttendance.SECTION_CHOICES)
-
-#     def validate_exam_session(self, session):
-#         if session.status != "active":
-#             raise serializers.ValidationError("Exam session is not currently active.")
-#         return session
-
-#     def validate_index_number(self, value):
-#         try:
-#             student = Student.objects.select_related("programme", "level").get(
-#                 index_number=value.strip()
-#             )
-#         except Student.DoesNotExist:
-#             raise serializers.ValidationError("No student found with this index number.")
-#         if not student.is_active:
-#             raise serializers.ValidationError("This student's record is inactive.")
-#         self._student = student
-#         return value
-
-#     def save(self, **kwargs):
-#         student    = self._student
-#         session    = self.validated_data["exam_session"]
-#         section    = self.validated_data["section"]
-#         scanned_by = self.context["request"].user
-
-#         existing = ExamAttendance.objects.filter(
-#             student=student, exam_session=session, section=section
-#         ).first()
-
-#         if existing:
-#             return {
-#                 "status":          "duplicate",
-#                 "message":         f"Student already scanned for Section {section}.",
-#                 "student":         StudentLookupSerializer(student).data,
-#                 "attendance":      AttendanceSerializer(existing).data,
-#                 "first_scan_time": existing.scan_time,
-#             }
-
-#         attendance = ExamAttendance.objects.create(
-#             student=student,
-#             exam_session=session,
-#             section=section,
-#             scanned_by=scanned_by,
-#             status="present",
-#         )
-
-#         return {
-#             "status":     "success",
-#             "message":    "Attendance recorded.",
-#             "student":    StudentLookupSerializer(student).data,
-#             "attendance": AttendanceSerializer(attendance).data,
-#         }
-
-
-
 class ScanSerializer(serializers.Serializer):
     """
     The frontend generates a QR code containing only the student's index_number.

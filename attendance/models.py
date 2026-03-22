@@ -1,5 +1,5 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 
 
 class Program(models.Model):
@@ -12,7 +12,6 @@ class Program(models.Model):
     def __str__(self):
         return f"{self.code} – {self.name}"
 
-
 class Level(models.Model):
     name = models.CharField(max_length=50)
 
@@ -22,15 +21,11 @@ class Level(models.Model):
     def __str__(self):
         return self.name
 
-
 class Student(models.Model):
-    GENDER_CHOICES = [("M", "Male"), ("F", "Female")]
-
     index_number = models.CharField(max_length=50, unique=True, db_index=True)
     full_name    = models.CharField(max_length=200)
     programme    = models.ForeignKey(Program, on_delete=models.PROTECT, related_name="students")
-    level        = models.ForeignKey(Level,   on_delete=models.PROTECT, related_name="students")
-    gender       = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
+    level        = models.ForeignKey(Level,   on_delete=models.CASCADE, related_name="students")
     is_active    = models.BooleanField(default=True)
     created_at   = models.DateTimeField(auto_now_add=True)
 
@@ -39,7 +34,6 @@ class Student(models.Model):
 
     def __str__(self):
         return f"{self.index_number} – {self.full_name}"
-
 
 class Course(models.Model):
     course_code  = models.CharField(max_length=20, unique=True)
@@ -52,7 +46,6 @@ class Course(models.Model):
 
     def __str__(self):
         return f"{self.course_code} – {self.course_title}"
-
 
 class ExamSession(models.Model):
     STATUS_CHOICES = [
@@ -94,7 +87,6 @@ class ExamSession(models.Model):
             "duplicate": qs.filter(status="duplicate").count(),
             "invalid":   qs.filter(status="invalid").count(),
         }
-
 
 class ExamAttendance(models.Model):
     """One record per student per section per exam session."""
