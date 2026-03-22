@@ -223,7 +223,7 @@ class StudentExportView(APIView):
                         s.full_name,
                         s.programme.code,
                         s.level.name,
-                        s.gender,
+                        # s.gender,
                     ]
                 )
         name = "students_template.xlsx" if template_only else "students.xlsx"
@@ -236,7 +236,7 @@ class StudentExportView(APIView):
 class StudentImportView(APIView):
     """
     POST /api/students/import/
-    Multipart file upload. Columns: index_number, full_name, programme_code, level_name, gender
+    Multipart file upload. Columns: index_number, full_name, programme_code, level_name
     Rows are upserted by index_number.
     """
 
@@ -267,7 +267,6 @@ class StudentImportView(APIView):
             full_name = row.get("full_name", "").strip()
             programme_code = row.get("programme_code", "").strip().upper()
             level_name = row.get("level_name", "").strip().upper()
-            gender = row.get("gender", "").strip().upper()[:1]
 
             if not index_number:
                 errors.append({"row": i, "error": "index_number is required."})
@@ -283,8 +282,6 @@ class StudentImportView(APIView):
             if level_name not in levels:
                 errors.append({"row": i, "error": f"Level '{level_name}' not found."})
                 continue
-            if gender and gender not in ("M", "F"):
-                gender = ""  # silently clear invalid gender
 
             try:
                 _, was_created = Student.objects.update_or_create(
@@ -293,7 +290,6 @@ class StudentImportView(APIView):
                         "full_name": full_name,
                         "programme": programmes[programme_code],
                         "level": levels[level_name],
-                        "gender": gender,
                     },
                 )
                 if was_created:

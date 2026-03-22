@@ -5,11 +5,10 @@ from . import views
 urlpatterns = [
     # ── Reference ────────────
     path("programs/", views.ProgramListCreateView.as_view(), name="program-list"),
-    path(
-        "programs/<int:pk>/", views.ProgramDetailView.as_view(), name="program-detail"
-    ),
+    path("programs/<int:pk>/", views.ProgramDetailView.as_view(), name="program-detail"),
     path("levels/", views.LevelListCreateView.as_view(), name="level-list"),
     path("levels/<int:pk>/", views.LevelDetailView.as_view(), name="level-detail"),
+    
     # ── Students ───────────
     path("students/export/", views.StudentExportView.as_view(), name="student-export"),
     path("students/import/", views.StudentImportView.as_view(), name="student-import"),
