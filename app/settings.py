@@ -10,9 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from datetime import timedelta
-from logging import config
+# from logging import config
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,18 +25,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8v4+mlk3a2ha1y@)3w%#hkzaz+fb_$lf260@=ofs6@6!06cyvl'
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+DEBUG = os.getenv("DEBUG")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+FRONTEND_DEV_URL = os.getenv("FRONTEND_DEV_URL")
+BACKEND_URL = os.getenv("BACKEND_URL")
+BACKEND_DEV_URL = os.getenv("BACKEND_DEV_URL")
+LOCALHOST = os.getenv("LOCALHOST")
 
-ALLOWED_HOSTS = ["attend.pythonanywhere.com", "localhost", "127.0.0.1"]
-
+ALLOWED_HOSTS = [BACKEND_DEV_URL, BACKEND_URL, LOCALHOST,]
 
 # Application definition
 
 INSTALLED_APPS = [
+    "unfold",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -162,9 +169,51 @@ SIMPLE_JWT = {
 }
 
 # CORS 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://examination-attendance.vercel.app",
-]
+CORS_ALLOWED_ORIGINS = [FRONTEND_DEV_URL, FRONTEND_URL,]
 CORS_ALLOW_CREDENTIALS = True
+
+# ─────────────────────────────────────────────
+# UNFOLD ADMIN
+# ─────────────────────────────────────────────
+UNFOLD = {
+    "SITE_TITLE": "ScanOva Examination Attendance System",
+    "SITE_HEADER": "ScanOva",
+    "COLORS": {
+    "base": {
+        # Zinc — neutral grays used across the UI
+        "50":  "oklch(98.5% 0.001 286)",
+        "100": "oklch(96.7% 0.001 286)",
+        "200": "oklch(92.8% 0.003 286)",
+        "300": "oklch(87.0% 0.005 286)",
+        "400": "oklch(70.7% 0.011 286)",
+        "500": "oklch(55.1% 0.014 286)",
+        "600": "oklch(44.6% 0.015 286)",
+        "700": "oklch(37.3% 0.013 286)",
+        "800": "oklch(27.8% 0.011 286)",
+        "900": "oklch(21.0% 0.011 286)",
+        "950": "oklch(13.0% 0.007 286)",
+    },
+    "primary": {
+        # Teal — matches --primary in your globals.css
+        "50":  "oklch(98.2% 0.018 196)",
+        "100": "oklch(95.2% 0.051 194)",
+        "200": "oklch(90.5% 0.093 192)",
+        "300": "oklch(84.4% 0.143 189)",
+        "400": "oklch(77.7% 0.153 185)",
+        "500": "oklch(72.0% 0.132 183)",   # teal-500 — dark mode --primary
+        "600": "oklch(64.9% 0.116 181)",
+        "700": "oklch(56.6% 0.097 180)",   # teal-700 — light mode --primary
+        "800": "oklch(47.5% 0.079 180)",
+        "900": "oklch(40.6% 0.066 180)",
+        "950": "oklch(27.9% 0.053 185)",
+    },
+    "font": {
+        "subtle-light":    "var(--color-base-500)",   # muted text on light bg
+        "subtle-dark":     "var(--color-base-400)",   # muted text on dark bg
+        "default-light":   "var(--color-base-600)",   # body text on light bg
+        "default-dark":    "var(--color-base-300)",   # body text on dark bg
+        "important-light": "var(--color-base-900)",   # headings on light bg
+        "important-dark":  "var(--color-base-100)",   # headings on dark bg
+    },
+},
+}

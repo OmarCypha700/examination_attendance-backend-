@@ -1,13 +1,21 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from unfold.admin import ModelAdmin
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from unfold.paginator import InfinitePaginator
 from django.utils.translation import gettext_lazy as _
 
 from .models import User
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(BaseUserAdmin, ModelAdmin):
     model = User
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+    paginator = InfinitePaginator
+    show_full_result_count = False
 
     # Columns displayed in the admin list view
     list_display = (
@@ -44,8 +52,17 @@ class UserAdmin(BaseUserAdmin):
 
     # Field layout when creating a new user
     add_fieldsets = (
-        (None, {
-            "classes": ("wide",),
-            "fields": ("username", "role", "phone_number", "password1", "password2"),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "username",
+                    "role",
+                    "phone_number",
+                    "password1",
+                    "password2",
+                ),
+            },
+        ),
     )

@@ -1,5 +1,8 @@
 from django.contrib import admin
 from django.db.models import Count
+from unfold.admin import ModelAdmin
+from unfold.paginator import InfinitePaginator
+
 
 from .models import (Course, ExamAttendance, ExamSession, Level, Program,
                      Student)
@@ -9,7 +12,7 @@ from .models import (Course, ExamAttendance, ExamSession, Level, Program,
 # Program Admin
 # =========================
 @admin.register(Program)
-class ProgramAdmin(admin.ModelAdmin):
+class ProgramAdmin(ModelAdmin):
     list_display = ("code", "name")
     search_fields = ("code", "name")
     ordering = ("code",)
@@ -19,7 +22,7 @@ class ProgramAdmin(admin.ModelAdmin):
 # Level Admin
 # =========================
 @admin.register(Level)
-class LevelAdmin(admin.ModelAdmin):
+class LevelAdmin(ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
     ordering = ("name",)
@@ -29,7 +32,10 @@ class LevelAdmin(admin.ModelAdmin):
 # Student Admin
 # =========================
 @admin.register(Student)
-class StudentAdmin(admin.ModelAdmin):
+class StudentAdmin(ModelAdmin):
+    paginator = InfinitePaginator
+    show_full_result_count = False
+    
     list_display = (
         "index_number",
         "full_name",
@@ -49,7 +55,7 @@ class StudentAdmin(admin.ModelAdmin):
 # Course Admin
 # =========================
 @admin.register(Course)
-class CourseAdmin(admin.ModelAdmin):
+class CourseAdmin(ModelAdmin):
     list_display = ("course_code", "course_title", "programme", "level")
     list_filter = ("programme", "level")
     search_fields = ("course_code", "course_title")
@@ -72,7 +78,7 @@ class ExamAttendanceInline(admin.TabularInline):
 # ExamSession Admin
 # =========================
 @admin.register(ExamSession)
-class ExamSessionAdmin(admin.ModelAdmin):
+class ExamSessionAdmin(ModelAdmin):
     list_display = (
         "course",
         "programme",
@@ -103,7 +109,7 @@ class ExamSessionAdmin(admin.ModelAdmin):
 # ExamAttendance Admin
 # =========================
 @admin.register(ExamAttendance)
-class ExamAttendanceAdmin(admin.ModelAdmin):
+class ExamAttendanceAdmin(ModelAdmin):
     list_display = (
         "student",
         "exam_session",
